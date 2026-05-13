@@ -215,11 +215,6 @@ router.put('/subjects/:subjectId/submit', (req, res) => {
     return;
   }
 
-  // Get all students
-  const students = queryAll<{ student_id: string }>(
-    'SELECT student_id FROM student_rows',
-  );
-
   // Delete existing confirmed rules for this subject
   run('DELETE FROM assessment_rules WHERE subject_id = ? AND confirmed = 1', [subjectId]);
 
@@ -237,20 +232,23 @@ router.put('/subjects/:subjectId/submit', (req, res) => {
     );
   }
 
-  // Update calculation_results for all students
+  // Compute bonus/penalty totals
+  const bonusTotal = entries
+    .filter((e: any) => e.scoreType === 'bonus')
+    .reduce((s: number, e: any) => s + (e.score * (e.quantity || 1)), 0);
+  const penaltyTotal = entries
+    .filter((e: any) => e.scoreType === 'penalty')
+    .reduce((s: number, e: any) => s + (e.score * (e.quantity || 1)), 0);
+
+  // Update calculation_results for existing students
+  const students = queryAll<{ student_id: string }>(
+    'SELECT student_id FROM student_rows',
+  );
   for (const student of students) {
     const existing = queryOne<{ id: string }>(
       "SELECT id FROM calculation_results WHERE student_id = ? AND subject_id = ?",
       [student.student_id, subjectId],
     );
-
-    const bonusTotal = entries
-      .filter((e: any) => e.scoreType === 'bonus')
-      .reduce((s: number, e: any) => s + (e.score * (e.quantity || 1)), 0);
-    const penaltyTotal = entries
-      .filter((e: any) => e.scoreType === 'penalty')
-      .reduce((s: number, e: any) => s + (e.score * (e.quantity || 1)), 0);
-
     if (existing) {
       run(
         `UPDATE calculation_results SET base_score = ?, bonus_total = ?, penalty_total = ?,
@@ -267,6 +265,31 @@ router.put('/subjects/:subjectId/submit', (req, res) => {
           missing_materials_json, rule_results_json)
          VALUES (?, ?, ?, ?, ?, ?, ?, '[]', '[]')`,
         [id, student.student_id, subjectId, baseScore ?? 0, bonusTotal, penaltyTotal, totalScore],
+      );
+    }
+  }
+
+  // If no students exist, still create a calculation_result for export page
+  if (students.length === 0) {
+    const existing = queryOne<{ id: string }>(
+      "SELECT id FROM calculation_results WHERE subject_id = ?",
+      [subjectId],
+    );
+    if (existing) {
+      run(
+        `UPDATE calculation_results SET base_score = ?, bonus_total = ?, penalty_total = ?,
+         final_score = ?
+         WHERE id = ?`,
+        [baseScore ?? 0, bonusTotal, penaltyTotal, totalScore, existing.id],
+      );
+    } else {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      run(
+        `INSERT INTO calculation_results
+         (id, student_id, subject_id, base_score, bonus_total, penalty_total, final_score,
+          missing_materials_json, rule_results_json)
+         VALUES (?, '', ?, ?, ?, ?, ?, '[]', '[]')`,
+        [id, subjectId, baseScore ?? 0, bonusTotal, penaltyTotal, totalScore],
       );
     }
   }

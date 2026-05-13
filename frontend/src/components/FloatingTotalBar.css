@@ -1,0 +1,108 @@
+.ftb-bar {
+  position: sticky;
+  bottom: 24px;
+  margin: 32px 56px 0;
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 28px;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.ftb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  border-radius: 980px;
+  background: #1d1d1f;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ftb-toggle:hover {
+  opacity: 0.88;
+}
+
+.ftb-total {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ftb-label {
+  font-size: 17px;
+  font-weight: 500;
+  color: #1d1d1f;
+  letter-spacing: -0.022em;
+}
+
+.ftb-formula {
+  font-size: 15px;
+  color: #6e6e73;
+  font-variant-numeric: tabular-nums;
+}
+
+.ftb-equals {
+  font-size: 15px;
+  color: #6e6e73;
+}
+
+.ftb-value {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1d1d1f;
+  font-variant-numeric: tabular-nums;
+}
+
+.ftb-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 980px;
+  background: #0071e3;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ftb-submit-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.ftb-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 1023px) {
+  .ftb-bar {
+    bottom: 16px;
+    margin: 24px 18px 0;
+    border-radius: 24px;
+    padding: 12px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .ftb-label,
+  .ftb-value {
+    font-size: 15px;
+  }
+}

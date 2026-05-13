@@ -1,0 +1,217 @@
+{
+  "schemaVersion": "1.0",
+  "subjects": {
+    "moral": {
+      "label": "德育",
+      "scoreItems": [
+        {
+          "id": "moral-honor-1",
+          "name": "三好学生",
+          "direction": "bonus",
+          "baseScore": 5,
+          "scoreUnit": "fixed",
+          "category": "moral_honor",
+          "groupKey": "moral",
+          "keywords": ["荣誉"],
+          "constraintIds": [],
+          "sourceText": "获得三好学生称号者加5分",
+          "sourcePage": null
+        },
+        {
+          "id": "moral-cadre-1",
+          "name": "优秀班干部",
+          "direction": "bonus",
+          "baseScore": 4,
+          "scoreUnit": "fixed",
+          "category": "moral_honor",
+          "groupKey": "moral",
+          "keywords": ["班干部"],
+          "constraintIds": [],
+          "sourceText": "获评优秀班干部加4分",
+          "sourcePage": null
+        },
+        {
+          "id": "moral-penalty-1",
+          "name": "违纪处分",
+          "direction": "penalty",
+          "baseScore": 10,
+          "scoreUnit": "fixed",
+          "category": "moral_penalty",
+          "groupKey": "moral",
+          "keywords": ["处分"],
+          "constraintIds": [],
+          "sourceText": "有违纪处分记录扣10分",
+          "sourcePage": null
+        }
+      ],
+      "constraints": []
+    },
+    "academic": {
+      "label": "智育",
+      "scoreItems": [
+        {
+          "id": "academic-competition-1",
+          "name": "竞赛获奖-国家级",
+          "direction": "bonus",
+          "baseScore": 10,
+          "scoreUnit": "fixed",
+          "category": "academic_competition",
+          "groupKey": "academic",
+          "keywords": ["国家级", "竞赛"],
+          "constraintIds": [],
+          "sourceText": "国家级学科竞赛获奖加10分",
+          "sourcePage": null
+        },
+        {
+          "id": "academic-competition-2",
+          "name": "竞赛获奖-省级",
+          "direction": "bonus",
+          "baseScore": 5,
+          "scoreUnit": "fixed",
+          "category": "academic_competition",
+          "groupKey": "academic",
+          "keywords": ["省级", "竞赛"],
+          "constraintIds": [],
+          "sourceText": "省级学科竞赛获奖加5分",
+          "sourcePage": null
+        },
+        {
+          "id": "academic-publication-1",
+          "name": "论文发表",
+          "direction": "bonus",
+          "baseScore": 8,
+          "scoreUnit": "fixed",
+          "category": "academic_research",
+          "groupKey": "academic",
+          "keywords": ["论文", "科研"],
+          "constraintIds": [],
+          "sourceText": "发表学术论文加8分",
+          "sourcePage": null
+        },
+        {
+          "id": "academic-fail-1",
+          "name": "挂科",
+          "direction": "penalty",
+          "baseScore": 5,
+          "scoreUnit": "fixed",
+          "category": "academic_penalty",
+          "groupKey": "academic",
+          "keywords": ["挂科"],
+          "constraintIds": [],
+          "sourceText": "有挂科记录扣5分",
+          "sourcePage": null
+        }
+      ],
+      "constraints": []
+    },
+    "sports": {
+      "label": "体育",
+      "scoreItems": [
+        {
+          "id": "sports-award-1",
+          "name": "校运会金牌",
+          "direction": "bonus",
+          "baseScore": 6,
+          "scoreUnit": "fixed",
+          "category": "sports_competition",
+          "groupKey": "sports",
+          "keywords": ["比赛", "竞赛"],
+          "constraintIds": [],
+          "sourceText": "校运会金牌加6分",
+          "sourcePage": null
+        },
+        {
+          "id": "sports-fitness-1",
+          "name": "体育达标",
+          "direction": "bonus",
+          "baseScore": 2,
+          "scoreUnit": "fixed",
+          "category": "sports_other",
+          "groupKey": "sports",
+          "keywords": ["达标"],
+          "constraintIds": [],
+          "sourceText": "年度体测达标加2分",
+          "sourcePage": null
+        }
+      ],
+      "constraints": []
+    },
+    "aesthetic": {
+      "label": "美育",
+      "scoreItems": [
+        {
+          "id": "aesthetic-performance-1",
+          "name": "文艺演出",
+          "direction": "bonus",
+          "baseScore": 4,
+          "scoreUnit": "fixed",
+          "category": "aesthetic_activity",
+          "groupKey": "aesthetic",
+          "keywords": ["文艺", "活动"],
+          "constraintIds": [],
+          "sourceText": "参加校级文艺演出加4分",
+          "sourcePage": null
+        },
+        {
+          "id": "aesthetic-award-1",
+          "name": "艺术比赛获奖",
+          "direction": "bonus",
+          "baseScore": 6,
+          "scoreUnit": "fixed",
+          "category": "aesthetic_competition",
+          "groupKey": "aesthetic",
+          "keywords": ["比赛", "获奖"],
+          "constraintIds": [],
+          "sourceText": "艺术类比赛获奖加6分",
+          "sourcePage": null
+        }
+      ],
+      "constraints": []
+    },
+    "labor": {
+      "label": "劳育",
+      "scoreItems": [
+        {
+          "id": "labor-practice-1",
+          "name": "社会实践",
+          "direction": "bonus",
+          "baseScore": 5,
+          "scoreUnit": "fixed",
+          "category": "labor_entrepreneurship",
+          "groupKey": "labor",
+          "keywords": ["实践"],
+          "constraintIds": [],
+          "sourceText": "完成社会实践加5分",
+          "sourcePage": null
+        },
+        {
+          "id": "labor-dorm-1",
+          "name": "宿舍卫生不达标",
+          "direction": "penalty",
+          "baseScore": 2,
+          "scoreUnit": "fixed",
+          "category": "labor_dormitory",
+          "groupKey": "labor",
+          "keywords": ["宿舍", "卫生"],
+          "constraintIds": [],
+          "sourceText": "宿舍卫生评分低于60扣2分",
+          "sourcePage": null
+        },
+        {
+          "id": "labor-work-1",
+          "name": "勤工助学",
+          "direction": "bonus",
+          "baseScore": 3,
+          "scoreUnit": "fixed",
+          "category": "labor_other",
+          "groupKey": "labor",
+          "keywords": ["勤工"],
+          "constraintIds": [],
+          "sourceText": "参加勤工助学加3分",
+          "sourcePage": null
+        }
+      ],
+      "constraints": []
+    }
+  }
+}

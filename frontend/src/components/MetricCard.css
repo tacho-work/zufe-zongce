@@ -1,0 +1,23 @@
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.metric-card-label {
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--color-ink-secondary);
+}
+
+.metric-card-value {
+  font-size: var(--text-page-title);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}

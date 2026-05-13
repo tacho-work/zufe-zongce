@@ -1,0 +1,79 @@
+:root {
+  /* ============================================
+     Monochrome Palette
+     ============================================ */
+  --color-ink: #1f1f21;
+  --color-ink-secondary: #6f6f6f;
+  --color-ink-muted: #9a9a9a;
+
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f7f7f8;
+  --color-bg-hover: #f2f2f3;
+
+  --color-border: #e5e5e5;
+  --color-border-light: #efefef;
+
+  /* Semantic aliases */
+  --color-primary: var(--color-ink);
+  --color-primary-focus: var(--color-ink);
+  --color-text: var(--color-ink);
+  --color-text-secondary: var(--color-ink-secondary);
+  --color-text-muted: var(--color-ink-muted);
+
+  /* ============================================
+     Typography
+     ============================================ */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Menlo", monospace;
+
+  --text-hero: 36px;
+  --text-page-title: 32px;
+  --text-section-title: 20px;
+  --text-body-lg: 18px;
+  --text-body: 16px;
+  --text-caption: 14px;
+  --text-fine: 12px;
+
+  /* Convenience aliases */
+  --text-xs: var(--text-fine);
+  --text-sm: var(--text-caption);
+  --text-base: var(--text-body);
+  --text-lg: var(--text-body-lg);
+  --text-xl: var(--text-section-title);
+  --text-2xl: var(--text-page-title);
+
+  /* ============================================
+     Spacing
+     ============================================ */
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* ============================================
+     Layout
+     ============================================ */
+  --nav-height: 52px;
+  --sidebar-width: clamp(200px, 16vw, 240px);
+  --mobile-nav-height: 56px;
+  --page-padding: clamp(24px, 4vw, 48px);
+  --module-gap: 16px;
+  --content-max: 960px;
+
+  /* ============================================
+     Border Radius
+     ============================================ */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 9999px;
+
+  /* ============================================
+     Transitions
+     ============================================ */
+  --transition-fast: 150ms ease;
+  --transition-page: 250ms ease-out;
+}

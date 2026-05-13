@@ -1,0 +1,71 @@
+.ept-scroll {
+  overflow-x: auto;
+}
+
+.ept-empty {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.ept-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.ept-table th {
+  text-align: left;
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 2px solid var(--color-border);
+  font-weight: 600;
+  font-size: var(--text-fine);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ept-table td {
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.ept-row-selected {
+  background: #eff6ff;
+}
+
+.ept-row-selected:hover {
+  background: #dbeafe;
+}
+
+.ept-table tbody tr:hover:not(.ept-row-selected) {
+  background: var(--color-bg-hover);
+}
+
+.ept-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-fine);
+}
+
+.ept-name {
+  font-weight: 500;
+}
+
+.ept-score {
+  font-variant-numeric: tabular-nums;
+}
+
+.ept-total {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ept-warn {
+  color: #d97706;
+  font-weight: 600;
+}
+
+.ept-err {
+  color: #dc2626;
+  font-weight: 600;
+}

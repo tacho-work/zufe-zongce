@@ -1,0 +1,27 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  background: var(--color-bg-secondary);
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding-bottom: var(--mobile-nav-height);
+  }
+}

@@ -1,0 +1,28 @@
+.page-header {
+  padding: var(--space-xxl) var(--page-padding) var(--space-lg);
+  max-width: var(--content-max);
+}
+
+.page-header-title {
+  font-size: var(--text-page-title);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.page-header-desc {
+  margin-top: var(--space-xs);
+  font-size: var(--text-body-lg);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+}
+
+@media (max-width: 640px) {
+  .page-header-title {
+    font-size: 26px;
+  }
+  .page-header-desc {
+    font-size: var(--text-body);
+  }
+}

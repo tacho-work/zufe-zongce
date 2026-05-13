@@ -1,0 +1,86 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            pkg_target: node20-linux-x64
+            artifact_name: zongce-linux-x64
+          - os: windows-latest
+            pkg_target: node20-win-x64
+            artifact_name: zongce-win-x64.exe
+          - os: macos-latest
+            pkg_target: node20-macos-arm64
+            artifact_name: zongce-macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Bundle backend
+        run: node scripts/esbuild-bundle.mjs
+
+      - name: Package binary with pkg
+        run: npx pkg dist-bundle/index.cjs -c package.json -t ${{ matrix.pkg_target }} -o ../releases/${{ matrix.artifact_name }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: releases/${{ matrix.artifact_name }}
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref }}
+          files: |
+            artifacts/zongce-linux-x64/zongce-linux-x64
+            artifacts/zongce-win-x64/zongce-win-x64.exe
+            artifacts/zongce-macos-arm64/zongce-macos-arm64
+          fail_on_unmatched_files: false
+          generate_release_notes: true

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.db
+*.db-journal
+.DS_Store
+backend/templates/
+test-filled-output.docx
+.codex/
+.claude/
+*.tsbuildinfo
+python/
+DESIGN.md
+plan.md
+backend/dist-bundle/
+releases/
+backend/releases/
+frontend/dist/

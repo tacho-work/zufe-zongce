@@ -1,0 +1,30 @@
+.tfp-root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tfp-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary, #f9f9fb);
+  border-radius: 10px;
+  font-size: var(--text-sm, 13px);
+  color: var(--color-text-secondary, #6e6e73);
+}
+
+.tfp-empty {
+  font-size: var(--text-sm, 13px);
+  color: var(--color-text-muted, #8e8e93);
+  padding: 8px 0;
+}
+
+.tfp-error {
+  font-size: var(--text-sm, 13px);
+  color: var(--color-danger, #ff3b30);
+  margin: 0;
+}

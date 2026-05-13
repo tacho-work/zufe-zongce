@@ -1,0 +1,45 @@
+.export-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.export-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.export-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary, #f9f9fb);
+  border-radius: 10px;
+  border: 1px solid var(--color-border-light, #e5e5ea);
+}
+
+.export-summary-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text, #1d1d1f);
+}
+
+.export-summary-total {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text, #1d1d1f);
+}
+
+.ep-fill-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.ep-fill-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

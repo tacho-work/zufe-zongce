@@ -53,6 +53,7 @@ jobs:
         run: node scripts/esbuild-bundle.mjs
 
       - name: Package binary with pkg
+        shell: bash
         run: |
           mkdir -p ../releases
           ./node_modules/.bin/pkg dist-bundle/index.cjs -c package.json -t ${{ matrix.pkg_target }} -o ../releases/${{ matrix.artifact_name }}

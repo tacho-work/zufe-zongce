@@ -75,6 +75,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true
+
+      - name: Debug artifacts
+        run: find artifacts -type f
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -82,8 +86,8 @@ jobs:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref }}
           files: |
-            artifacts/zongce-linux-x64/zongce-linux-x64
-            artifacts/zongce-win-x64/zongce-win-x64.exe
-            artifacts/zongce-macos-arm64/zongce-macos-arm64
+            artifacts/zongce-linux-x64
+            artifacts/zongce-win-x64.exe
+            artifacts/zongce-macos-arm64
           fail_on_unmatched_files: false
           generate_release_notes: true

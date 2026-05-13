@@ -7,13 +7,9 @@ import type { BaseScoreItem } from '../services/api';
 import './SettingsPage.css';
 
 export function SettingsPage() {
-  // AI settings
-  const [aiProvider, setAiProvider] = useState('');
-  const [aiBaseUrl, setAiBaseUrl] = useState('');
-  const [aiModel, setAiModel] = useState('');
+  // AI settings — DeepSeek only
   const [aiToken, setAiToken] = useState('');
   const [aiTokenConfigured, setAiTokenConfigured] = useState(false);
-  const [savedAI, setSavedAI] = useState({ aiProvider: '', aiBaseUrl: '', aiModel: '' });
   const [aiSaving, setAiSaving] = useState(false);
 
   // Base score settings
@@ -42,11 +38,7 @@ export function SettingsPage() {
       api.getBaseScoreSettings(),
     ])
       .then(([ai, base]) => {
-        setAiProvider(ai.aiProvider);
-        setAiBaseUrl(ai.aiBaseUrl);
-        setAiModel(ai.aiModel);
         setAiTokenConfigured(ai.aiTokenConfigured);
-        setSavedAI({ aiProvider: ai.aiProvider, aiBaseUrl: ai.aiBaseUrl, aiModel: ai.aiModel });
 
         setBaseScoreItems(base.items);
         const saved: Record<string, number> = {};
@@ -66,16 +58,16 @@ export function SettingsPage() {
     setError(null);
     setSuccess(null);
     try {
-      const body: { aiProvider: string; aiBaseUrl: string; aiModel: string; aiToken?: string } = { aiProvider, aiBaseUrl, aiModel };
+      const body: { aiProvider: string; aiBaseUrl: string; aiModel: string; aiToken?: string } = {
+        aiProvider: 'deepseek',
+        aiBaseUrl: 'https://api.deepseek.com/v1',
+        aiModel: 'deepseek-chat',
+      };
       if (aiToken) body.aiToken = aiToken;
-      const updated = await api.updateAISettings(body);
-      setAiProvider(updated.aiProvider);
-      setAiBaseUrl(updated.aiBaseUrl);
-      setAiModel(updated.aiModel);
+      await api.updateAISettings(body);
       setAiToken('');
-      setAiTokenConfigured(updated.aiTokenConfigured);
-      setSavedAI({ aiProvider: updated.aiProvider, aiBaseUrl: updated.aiBaseUrl, aiModel: updated.aiModel });
-      setSuccess('AI 配置已保存');
+      setAiTokenConfigured(true);
+      setSuccess('DeepSeek API Key 已保存');
       setTimeout(() => setSuccess(null), 3000);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '保存失败');
@@ -85,16 +77,10 @@ export function SettingsPage() {
   };
 
   const handleAICancel = () => {
-    setAiProvider(savedAI.aiProvider);
-    setAiBaseUrl(savedAI.aiBaseUrl);
-    setAiModel(savedAI.aiModel);
     setAiToken('');
   };
 
-  const hasAIChanges = aiProvider !== savedAI.aiProvider
-    || aiBaseUrl !== savedAI.aiBaseUrl
-    || aiModel !== savedAI.aiModel
-    || aiToken !== '';
+  const hasAIChanges = aiToken !== '';
 
   const handleBaseScoreChange = (subjectId: string, value: number) => {
     setBaseScoreItems((prev) =>
@@ -163,19 +149,13 @@ export function SettingsPage() {
     <>
       <PageHeader
         title="设置"
-        description="AI 服务配置、基础分配置与默认参数。敏感 Token 仅在后端保存，不会显示在前端。"
+        description="DeepSeek API 密钥、基础分配置与默认参数。Token 仅在后端保存，不会显示在前端。"
       />
       <div className="page-content">
         <ModulePanel title="服务与参数配置">
           <SettingsPanel
-            aiProvider={aiProvider}
-            aiBaseUrl={aiBaseUrl}
-            aiModel={aiModel}
             aiToken={aiToken}
             aiTokenConfigured={aiTokenConfigured}
-            onAIProviderChange={setAiProvider}
-            onAIBaseUrlChange={setAiBaseUrl}
-            onAIModelChange={setAiModel}
             onAITokenChange={setAiToken}
             loading={loading}
             aiSaving={aiSaving}

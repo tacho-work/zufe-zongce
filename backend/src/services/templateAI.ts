@@ -88,11 +88,8 @@ function getAIToken(): string {
     || '';
 }
 
-function getAISettings() {
-  const provider = (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_provider'")?.value) ?? '';
-  const baseUrl = (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_base_url'")?.value) ?? '';
-  const model = (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_model'")?.value) ?? '';
-  return { provider, baseUrl, model };
+function getDeepSeekModel(): string {
+  return (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_model'")?.value) ?? 'deepseek-chat';
 }
 
 interface PlaceholderPosition {
@@ -185,83 +182,21 @@ function applyPlaceholders(docXml: string, positions: PlaceholderPosition[]): st
 }
 
 /**
- * Call the AI API to analyze the template and get placeholder positions.
+ * Call DeepSeek (OpenAI-compatible) API to get placeholder positions
  */
 async function callAIForPlaceholders(
   tableStructure: string,
 ): Promise<PlaceholderPosition[]> {
-  const { provider, baseUrl, model } = getAISettings();
   const token = getAIToken();
-
-  if (!token) throw new Error('AI Token 未配置，请在设置页输入 API Key');
-  if (!baseUrl) throw new Error('AI API Base URL 未配置');
-  if (!model) throw new Error('AI Model 未配置');
+  if (!token) throw new Error('DeepSeek API Key 未配置，请在设置页输入');
 
   const userMessage = `请分析以下模板表格结构，输出每个占位符应该插入的行号和列号。\n\n模板结构：\n\`\`\`\n${tableStructure}\n\`\`\`\n\n以JSON数组格式输出，每个元素包含 row, cell, name 三个字段。只输出JSON，不要其他内容。`;
 
-  const isAnthropic = provider === 'anthropic' || baseUrl.includes('/anthropic');
+  const endpoint = 'https://api.deepseek.com/v1/chat/completions';
+  const model = getDeepSeekModel();
 
   let response: Response;
-
-  if (isAnthropic) {
-    const endpoint = `${baseUrl.replace(/\/+$/, '')}/messages`;
-    console.log(`[templateAI] Calling endpoint: ${endpoint}, model: ${model}`);
-    try {
-      response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': token,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 16384,
-          system: EXTRACTION_PROMPT,
-          messages: [{ role: 'user', content: userMessage }],
-          temperature: 0.1,
-        }),
-      });
-    } catch (fetchErr) {
-      const e = fetchErr as Error;
-      console.error(`[templateAI] Fetch failed: ${e.message}`, e.cause);
-      throw new Error(`AI API 调用失败: ${e.message}`);
-    }
-
-    if (!response.ok) {
-      const errBody = await response.text().catch(() => '');
-      throw new Error(`AI API 错误 ${response.status}: ${errBody.substring(0, 200)}`);
-    }
-
-    const data = await response.json();
-    // Anthropic API returns content array with thinking+text blocks — try both
-    const textBlock = data.content?.find((c: { type: string }) => c.type === 'text');
-    const thinkingBlock = data.content?.find((c: { type: string }) => c.type === 'thinking');
-    let content = textBlock?.text || thinkingBlock?.thinking;
-    if (!content) {
-      const preview = JSON.stringify(data).substring(0, 500);
-      throw new Error(`AI 返回内容为空。原始响应: ${preview}`);
-    }
-
-    // Extract JSON array from response
-    const jsonMatch = content.match(/\[\s*\{[^]*?\}\s*\]/);
-    if (!jsonMatch) throw new Error(`AI 返回格式错误，未找到JSON数组: ${content.substring(0, 200)}`);
-
-    const positions: PlaceholderPosition[] = JSON.parse(jsonMatch[0]);
-
-    if (!Array.isArray(positions) || positions.length === 0) {
-      throw new Error('AI 返回的占位符列表为空');
-    }
-    for (const p of positions) {
-      if (typeof p.row !== 'number' || typeof p.cell !== 'number' || typeof p.name !== 'string') {
-        throw new Error(`AI 返回格式错误: ${JSON.stringify(p)}`);
-      }
-    }
-
-    return positions;
-  } else {
-    // OpenAI-compatible
-    const endpoint = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
+  try {
     response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -277,32 +212,36 @@ async function callAIForPlaceholders(
         temperature: 0.1,
       }),
     });
-
-    if (!response.ok) {
-      const errBody = await response.text().catch(() => '');
-      throw new Error(`AI API 错误 ${response.status}: ${errBody.substring(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) throw new Error('AI 返回内容为空');
-
-    const jsonMatch = content.match(/\[\s*\{[^]*?\}\s*\]/);
-    if (!jsonMatch) throw new Error(`AI 返回格式错误，未找到JSON数组: ${content.substring(0, 200)}`);
-
-    const positions: PlaceholderPosition[] = JSON.parse(jsonMatch[0]);
-
-    if (!Array.isArray(positions) || positions.length === 0) {
-      throw new Error('AI 返回的占位符列表为空');
-    }
-    for (const p of positions) {
-      if (typeof p.row !== 'number' || typeof p.cell !== 'number' || typeof p.name !== 'string') {
-        throw new Error(`AI 返回格式错误: ${JSON.stringify(p)}`);
-      }
-    }
-
-    return positions;
+  } catch (fetchErr) {
+    const e = fetchErr as Error;
+    console.error(`[templateAI] Fetch failed: ${e.message}`, e.cause);
+    throw new Error(`DeepSeek API 调用失败: ${e.message}`);
   }
+
+  if (!response.ok) {
+    const errBody = await response.text().catch(() => '');
+    throw new Error(`DeepSeek API 错误 ${response.status}: ${errBody.substring(0, 200)}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('DeepSeek 返回内容为空');
+
+  const jsonMatch = content.match(/\[\s*\{[^]*?\}\s*\]/);
+  if (!jsonMatch) throw new Error(`DeepSeek 返回格式错误，未找到JSON数组: ${content.substring(0, 200)}`);
+
+  const positions: PlaceholderPosition[] = JSON.parse(jsonMatch[0]);
+
+  if (!Array.isArray(positions) || positions.length === 0) {
+    throw new Error('DeepSeek 返回的占位符列表为空');
+  }
+  for (const p of positions) {
+    if (typeof p.row !== 'number' || typeof p.cell !== 'number' || typeof p.name !== 'string') {
+      throw new Error(`DeepSeek 返回格式错误: ${JSON.stringify(p)}`);
+    }
+  }
+
+  return positions;
 }
 
 /**

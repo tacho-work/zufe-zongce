@@ -5,14 +5,8 @@ import './SettingsPanel.css';
 
 interface Props {
   // AI
-  aiProvider: string;
-  aiBaseUrl: string;
-  aiModel: string;
   aiToken: string;
   aiTokenConfigured: boolean;
-  onAIProviderChange: (v: string) => void;
-  onAIBaseUrlChange: (v: string) => void;
-  onAIModelChange: (v: string) => void;
   onAITokenChange: (v: string) => void;
   loading: boolean;
   aiSaving: boolean;
@@ -39,8 +33,7 @@ interface Props {
 }
 
 export function SettingsPanel({
-  aiProvider, aiBaseUrl, aiModel, aiToken, aiTokenConfigured,
-  onAIProviderChange, onAIBaseUrlChange, onAIModelChange, onAITokenChange,
+  aiToken, aiTokenConfigured, onAITokenChange,
   loading, aiSaving, error, success, hasAIChanges,
   onAISave, onAICancel,
   baseScoreItems, onBaseScoreChange, baseScoresSaving, hasBaseScoreChanges,
@@ -52,10 +45,10 @@ export function SettingsPanel({
 
   return (
     <div className="sp-grid">
-      {/* AI config */}
+      {/* AI config — DeepSeek only */}
       <div className="sp-section">
         <h3 className="sp-section-title">
-          <Cpu size={16} /> AI 服务
+          <Cpu size={16} /> DeepSeek API 配置
         </h3>
         {loading ? (
           <p className="sp-desc">加载中...</p>
@@ -63,33 +56,21 @@ export function SettingsPanel({
           <>
             <div className="sp-field">
               <label>Provider</label>
-              <input
-                type="text"
-                value={aiProvider}
-                onChange={(e) => onAIProviderChange(e.target.value)}
-                className="sp-input"
-                placeholder="openai / anthropic / ..."
-              />
+              <p className="sp-desc" style={{ margin: 0, fontWeight: 500, color: 'var(--color-text)' }}>
+                DeepSeek
+              </p>
             </div>
             <div className="sp-field">
               <label>API Base URL</label>
-              <input
-                type="text"
-                value={aiBaseUrl}
-                onChange={(e) => onAIBaseUrlChange(e.target.value)}
-                className="sp-input"
-                placeholder="https://api.openai.com/v1"
-              />
+              <p className="sp-desc" style={{ margin: 0, fontWeight: 500, color: 'var(--color-text)' }}>
+                https://api.deepseek.com/v1
+              </p>
             </div>
             <div className="sp-field">
               <label>Model</label>
-              <input
-                type="text"
-                value={aiModel}
-                onChange={(e) => onAIModelChange(e.target.value)}
-                className="sp-input"
-                placeholder="gpt-4.1-mini"
-              />
+              <p className="sp-desc" style={{ margin: 0, fontWeight: 500, color: 'var(--color-text)' }}>
+                deepseek-chat
+              </p>
             </div>
             <div className="sp-field">
               <label>API Key</label>
@@ -98,7 +79,7 @@ export function SettingsPanel({
                 value={aiToken}
                 onChange={(e) => onAITokenChange(e.target.value)}
                 className="sp-input"
-                placeholder={aiTokenConfigured ? '已配置，留空则不修改' : '请输入 API Key'}
+                placeholder={aiTokenConfigured ? '已配置，留空则不修改' : '请输入 DeepSeek API Key'}
               />
               <span className="sp-hint">
                 Token 状态：

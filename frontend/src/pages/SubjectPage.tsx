@@ -22,7 +22,6 @@ interface Props {
   subjectId: SubjectId;
 }
 
-const EMPTY_BASE_SCORE = 0;
 const BASE_SCORE_UPLOAD_SUBJECTS = new Set<SubjectId>(['academic', 'sports']);
 
 type ActiveSection = 'base' | 'bonus';

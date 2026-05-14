@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Upload, FileText, X, Loader2, Check, Sparkles } from 'lucide-react';
+import { Upload, FileText, X, Loader2, Check } from 'lucide-react';
 import { api } from '../services/api';
 import type { TemplateUploadResponse } from '../types/zongce';
 import './TemplateImportPanel.css';
@@ -11,68 +11,22 @@ interface Props {
 
 type Status = 'idle' | 'uploading' | 'success' | 'error';
 
-const AI_TASK_KEY = 'template-ai-task-id';
-
 export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: Props) {
   const [status, setStatus] = useState<Status>('idle');
   const [dragOver, setDragOver] = useState(false);
   const [uploadResult, setUploadResult] = useState<TemplateUploadResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [aiRecognizing, setAiRecognizing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
     return () => {
       mountedRef.current = false;
-      if (pollTimerRef.current) {
-        clearTimeout(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
     };
   }, []);
 
-  const stopPolling = useCallback(() => {
-    setAiRecognizing(false);
-    localStorage.removeItem(AI_TASK_KEY);
-    if (pollTimerRef.current) {
-      clearTimeout(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-  }, []);
-
-  const startPolling = useCallback((taskId: string) => {
-    localStorage.setItem(AI_TASK_KEY, taskId);
-    const poll = async () => {
-      if (!mountedRef.current) return;
-      try {
-        const statusResp = await api.getAIStatus(taskId);
-        if (!mountedRef.current) return;
-        if (statusResp.status === 'done') {
-          const placeholders = (statusResp as { placeholders: string[] }).placeholders;
-          setUploadResult((prev) => prev ? { ...prev, placeholders } : null);
-          onPlaceholdersReady(placeholders);
-          stopPolling();
-        } else if (statusResp.status === 'error') {
-          setErrorMsg((statusResp as { error: string }).error ?? 'AI 识别失败');
-          stopPolling();
-        } else {
-          pollTimerRef.current = setTimeout(poll, 3000);
-        }
-      } catch {
-        if (mountedRef.current) {
-          setErrorMsg('查询 AI 识别状态失败');
-          stopPolling();
-        }
-      }
-    };
-    pollTimerRef.current = setTimeout(poll, 2000);
-  }, [onPlaceholdersReady, stopPolling]);
-
-  // On mount, check server template state and resume AI polling if needed
+  // On mount, check server template state.
   useEffect(() => {
-    const savedTaskId = localStorage.getItem(AI_TASK_KEY);
     api.getTemplatePlaceholders().then((res) => {
       if (res.hasTemplate) {
         setStatus('success');
@@ -81,20 +35,11 @@ export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: P
           placeholders: res.placeholders,
           uploadedAt: new Date().toISOString(),
         });
-        onTemplateChange(true);
+        onTemplateChange(res.placeholders.length > 0);
         onPlaceholdersReady(res.placeholders);
-        // Resume AI polling if there's a saved task or server says it's processing
-        const taskId = res.aiTaskId || savedTaskId;
-        if (taskId && res.placeholders.length === 0) {
-          setAiRecognizing(true);
-          startPolling(taskId);
-        } else if (taskId && res.placeholders.length > 0) {
-          // AI already completed — clean up localStorage
-          localStorage.removeItem(AI_TASK_KEY);
-        }
       }
     }).catch(() => {});
-  }, [onTemplateChange, onPlaceholdersReady, startPolling]);
+  }, [onTemplateChange, onPlaceholdersReady]);
 
   const uploadFile = useCallback(async (file: File) => {
     if (!file.name.endsWith('.docx')) {
@@ -108,7 +53,7 @@ export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: P
       const result = await api.uploadTemplate(file);
       setUploadResult(result);
       setStatus('success');
-      onTemplateChange(true);
+      onTemplateChange(result.placeholders.length > 0);
       onPlaceholdersReady(result.placeholders);
     } catch (err) {
       setStatus('error');
@@ -129,17 +74,15 @@ export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: P
   }, [uploadFile]);
 
   const handleReplace = useCallback(() => {
-    stopPolling();
     setStatus('idle');
     setUploadResult(null);
     setErrorMsg('');
     onTemplateChange(false);
     onPlaceholdersReady([]);
     setTimeout(() => inputRef.current?.click(), 0);
-  }, [onTemplateChange, onPlaceholdersReady, stopPolling]);
+  }, [onTemplateChange, onPlaceholdersReady]);
 
   const handleDelete = useCallback(async () => {
-    stopPolling();
     try {
       await api.deleteTemplate();
     } catch { /* ignore */ }
@@ -148,25 +91,12 @@ export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: P
     setErrorMsg('');
     onTemplateChange(false);
     onPlaceholdersReady([]);
-  }, [onTemplateChange, onPlaceholdersReady, stopPolling]);
+  }, [onTemplateChange, onPlaceholdersReady]);
 
   const handleRetry = useCallback(() => {
-    stopPolling();
     setStatus('idle');
     setErrorMsg('');
-  }, [stopPolling]);
-
-  const handleAIRecognize = useCallback(async () => {
-    setAiRecognizing(true);
-    setErrorMsg('');
-    try {
-      const { taskId } = await api.aiRecognizeTemplate();
-      startPolling(taskId);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'AI 识别启动失败');
-      stopPolling();
-    }
-  }, [startPolling, stopPolling]);
+  }, []);
 
   return (
     <div
@@ -187,7 +117,7 @@ export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: P
         <div className="tip-idle" onClick={() => inputRef.current?.click()}>
           <Upload size={24} />
           <p className="tip-title">导入 Word 模板</p>
-          <p className="tip-hint">拖拽 .docx 文件到此处，或点击选择</p>
+          <p className="tip-hint">请上传已插入占位符的 .docx 文件</p>
         </div>
       )}
 
@@ -208,19 +138,8 @@ export function TemplateImportPanel({ onTemplateChange, onPlaceholdersReady }: P
           <div className="tip-placeholder-count">
             检测到 <strong>{uploadResult.placeholders.length}</strong> 个可填充字段
           </div>
-
           {uploadResult.placeholders.length === 0 && (
-            <div className="tip-ai-section">
-              <p className="tip-hint">空白模板未检测到占位符，可使用 AI 自动识别插入。</p>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={handleAIRecognize}
-                disabled={aiRecognizing}
-              >
-                {aiRecognizing ? <><Loader2 size={14} className="spin" /> 识别中</> : <><Sparkles size={14} /> AI 识别占位符</>}
-              </button>
-              {errorMsg && <p className="tip-error-msg">{errorMsg}</p>}
-            </div>
+            <p className="tip-error-msg">未检测到占位符，请更换为已插入占位符的模板。</p>
           )}
 
           <div className="tip-actions">

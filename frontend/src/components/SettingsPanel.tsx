@@ -1,20 +1,12 @@
-import { Cpu, FileText, Upload, Loader2 } from 'lucide-react';
+import { FileText, Upload, Loader2 } from 'lucide-react';
 import { useRef } from 'react';
 import type { BaseScoreItem } from '../services/api';
 import './SettingsPanel.css';
 
 interface Props {
-  // AI
-  aiToken: string;
-  aiTokenConfigured: boolean;
-  onAITokenChange: (v: string) => void;
   loading: boolean;
-  aiSaving: boolean;
   error: string | null;
   success: string | null;
-  hasAIChanges: boolean;
-  onAISave: () => void;
-  onAICancel: () => void;
   // Base scores
   baseScoreItems: BaseScoreItem[];
   onBaseScoreChange: (subjectId: string, value: number) => void;
@@ -22,9 +14,6 @@ interface Props {
   hasBaseScoreChanges: boolean;
   onBaseScoresSave: () => void;
   onBaseScoresCancel: () => void;
-  // Local defaults
-  exportNamingRule: string;
-  onExportNamingRuleChange: (v: string) => void;
   // Rules upload
   rulesUploading: boolean;
   rulesError: string | null;
@@ -33,82 +22,15 @@ interface Props {
 }
 
 export function SettingsPanel({
-  aiToken, aiTokenConfigured, onAITokenChange,
-  loading, aiSaving, error, success, hasAIChanges,
-  onAISave, onAICancel,
+  loading, error, success,
   baseScoreItems, onBaseScoreChange, baseScoresSaving, hasBaseScoreChanges,
   onBaseScoresSave, onBaseScoresCancel,
-  exportNamingRule, onExportNamingRuleChange,
   rulesUploading, rulesError, rulesSuccess, onRulesUpload,
 }: Props) {
   const rulesFileRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="sp-grid">
-      {/* AI config — DeepSeek only */}
-      <div className="sp-section">
-        <h3 className="sp-section-title">
-          <Cpu size={16} /> DeepSeek API 配置
-        </h3>
-        {loading ? (
-          <p className="sp-desc">加载中...</p>
-        ) : (
-          <>
-            <div className="sp-field">
-              <label>Provider</label>
-              <p className="sp-desc" style={{ margin: 0, fontWeight: 500, color: 'var(--color-text)' }}>
-                DeepSeek
-              </p>
-            </div>
-            <div className="sp-field">
-              <label>API Base URL</label>
-              <p className="sp-desc" style={{ margin: 0, fontWeight: 500, color: 'var(--color-text)' }}>
-                https://api.deepseek.com/v1
-              </p>
-            </div>
-            <div className="sp-field">
-              <label>Model</label>
-              <p className="sp-desc" style={{ margin: 0, fontWeight: 500, color: 'var(--color-text)' }}>
-                deepseek-chat
-              </p>
-            </div>
-            <div className="sp-field">
-              <label>API Key</label>
-              <input
-                type="password"
-                value={aiToken}
-                onChange={(e) => onAITokenChange(e.target.value)}
-                className="sp-input"
-                placeholder={aiTokenConfigured ? '已配置，留空则不修改' : '请输入 DeepSeek API Key'}
-              />
-              <span className="sp-hint">
-                Token 状态：
-                <span className={`sp-chip ${aiTokenConfigured ? 'sp-chip-ok' : 'sp-chip-no'}`}>
-                  {aiTokenConfigured ? '已配置' : '未配置'}
-                </span>
-                留空则保持现有 Token 不变
-              </span>
-            </div>
-            <div className="sp-actions">
-              <button
-                className="sp-btn sp-btn-primary"
-                onClick={onAISave}
-                disabled={aiSaving || !hasAIChanges}
-              >
-                {aiSaving ? <><Loader2 size={14} className="sp-spin" /> 保存中</> : '保存'}
-              </button>
-              <button
-                className="sp-btn"
-                onClick={onAICancel}
-                disabled={!hasAIChanges}
-              >
-                取消
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
       {/* Base scores config */}
       <div className="sp-section">
         <h3 className="sp-section-title">
@@ -119,21 +41,31 @@ export function SettingsPanel({
         ) : (
           <>
             <p className="sp-desc" style={{ marginTop: 0, marginBottom: 'var(--space-md)' }}>
-              设置各科目基础分。当前仅保存配置，后续计算接入时使用。
+              德育、美育、劳育使用这里的固定基础分；智育和体育在对应科目页上传成绩文件后计算。
             </p>
-            {baseScoreItems.map((item) => (
-              <div className="sp-field" key={item.subjectId}>
-                <label>{item.subjectName}</label>
-                <input
-                  type="number"
-                  value={item.baseScore}
-                  onChange={(e) => onBaseScoreChange(item.subjectId, Number(e.target.value))}
-                  className="sp-input sp-input-narrow"
-                  min={0}
-                  max={100}
-                />
+            <div className="sp-base-score-grid">
+              {baseScoreItems.map((item) => (
+                <div className="sp-field sp-base-score-field" key={item.subjectId}>
+                  <label>{item.subjectName}</label>
+                  <input
+                    type="number"
+                    value={item.baseScore}
+                    onChange={(e) => onBaseScoreChange(item.subjectId, Number(e.target.value))}
+                    className="sp-input"
+                    min={0}
+                    max={100}
+                  />
+                </div>
+              ))}
+              <div className="sp-base-score-note">
+                <span>智育</span>
+                <span>上传成绩文件计算</span>
               </div>
-            ))}
+              <div className="sp-base-score-note">
+                <span>体育</span>
+                <span>上传成绩文件计算</span>
+              </div>
+            </div>
             <div className="sp-actions">
               <button
                 className="sp-btn sp-btn-primary"
@@ -152,23 +84,6 @@ export function SettingsPanel({
             </div>
           </>
         )}
-      </div>
-
-      {/* Local defaults */}
-      <div className="sp-section">
-        <h3 className="sp-section-title">
-          <FileText size={16} /> 其他配置
-        </h3>
-        <div className="sp-field">
-          <label>导出文件命名规则</label>
-          <input
-            type="text"
-            value={exportNamingRule}
-            onChange={(e) => onExportNamingRuleChange(e.target.value)}
-            className="sp-input"
-            placeholder="综测计算_{date}"
-          />
-        </div>
       </div>
 
       {/* Rules file upload */}

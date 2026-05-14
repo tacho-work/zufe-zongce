@@ -6,7 +6,6 @@ import { TemplateImportPanel } from '../components/TemplateImportPanel';
 import { TemplateFillPreview } from '../components/TemplateFillPreview';
 import { FillDataEditor } from '../components/FillDataEditor';
 import { api } from '../services/api';
-import type { ExportPreview } from '../types/zongce';
 import './ExportPage.css';
 
 interface ScoreSummarySubject {
@@ -17,27 +16,11 @@ interface ScoreSummarySubject {
 }
 
 export function ExportPage() {
-  const [data, setData] = useState<ExportPreview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [templatePlaceholders, setTemplatePlaceholders] = useState<string[]>([]);
   const [hasTemplate, setHasTemplate] = useState(false);
   const [scoreSummary, setScoreSummary] = useState<ScoreSummarySubject[]>([]);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [fillEditorOpen, setFillEditorOpen] = useState(false);
-
-  const fetchPreview = useCallback(async () => {
-    try {
-      setLoading(true);
-      const result = await api.getExportPreview();
-      setData(result);
-      setError(null);
-    } catch {
-      setError('无法加载数据（后端可能未启动，或需先执行计算）');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const fetchScoreSummary = useCallback(async () => {
     try {
@@ -52,7 +35,6 @@ export function ExportPage() {
   }, []);
 
   useEffect(() => {
-    fetchPreview();
     fetchScoreSummary();
     api.getTemplatePlaceholders().then((res) => {
       if (res.hasTemplate) {
@@ -60,16 +42,7 @@ export function ExportPage() {
         setTemplatePlaceholders(res.placeholders);
       }
     }).catch(() => {});
-  }, [fetchPreview, fetchScoreSummary]);
-
-  if (loading) {
-    return (
-      <>
-        <PageHeader title="导出" description="加载中..." />
-        <div className="page-content"><p className="sp-loading">加载中...</p></div>
-      </>
-    );
-  }
+  }, [fetchScoreSummary]);
 
   return (
     <>
@@ -126,14 +99,6 @@ export function ExportPage() {
         </ModulePanel>
 
         <FillDataEditor open={fillEditorOpen} onClose={() => setFillEditorOpen(false)} />
-
-        {/* Error state */}
-        {error && (
-          <div className="sp-error">
-            <p>{error}</p>
-            <button className="btn btn-primary btn-sm" onClick={fetchPreview}>重试</button>
-          </div>
-        )}
       </div>
     </>
   );

@@ -1,7 +1,6 @@
 import type {
-  SubjectSummary, SubjectConfig, AssessmentRule,
-  ExportPreview,
-  StudentScorePreview, AcademicBaseScoreResult, AcademicRulesResponse, SubjectRulesResponse,
+  SubjectConfig,
+  AcademicBaseScoreResult, AcademicRulesResponse, SubjectRulesResponse,
   TemplateUploadResponse, TemplatePlaceholdersResponse, FillPreviewResponse,
 } from '../types/zongce';
 
@@ -24,28 +23,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export interface Part {
-  id: number; label: string; type: string; order: number;
-}
-
-export interface DashboardSummary {
-  parts: (Part & { record_count: number })[];
-  total_records: number;
-}
-
-export interface RecordItem {
-  id: number; part_id: number; category: string; status: string;
-  score: number; metadata_json: string; created_at: string; updated_at: string;
-}
-
-export interface AISettingsResponse {
-  aiProvider: string;
-  aiBaseUrl: string;
-  aiModel: string;
-  aiTokenConfigured: boolean;
-  updatedAt: string | null;
-}
-
 export interface BaseScoreItem {
   subjectId: string;
   subjectName: string;
@@ -60,55 +37,17 @@ export interface BaseScoreSettingsResponse {
 export const api = {
   health: () => request<{ status: string }>('/health'),
   setup: () => request('/setup', { method: 'POST' }),
-  getParts: () => request<Part[]>('/parts'),
-  getDashboardSummary: () => request<DashboardSummary>('/dashboard/summary'),
-  getDashboardPart: (partId: number) => request<any>(`/dashboard/parts/${partId}`),
-  getRecords: (params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<RecordItem[]>(`/records${qs}`);
-  },
-  createRecord: (body: Partial<RecordItem>) =>
-    request<RecordItem>('/records', { method: 'POST', body: JSON.stringify(body) }),
-  getRecord: (id: number) => request<RecordItem>(`/records/${id}`),
-  updateRecord: (id: number, body: Partial<RecordItem>) =>
-    request<RecordItem>(`/records/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-  deleteRecord: (id: number) =>
-    request<void>(`/records/${id}`, { method: 'DELETE' }),
-  getMaterials: () => request<any[]>('/materials'),
-  getTasks: () => request<any[]>('/tasks'),
-  getTimeline: () => request<any[]>('/timeline'),
 
   // -- Subjects --
-  getSubjects: () => request<SubjectSummary[]>('/subjects'),
   getSubject: (subjectId: string) => request<SubjectConfig>(`/subjects/${subjectId}`),
-  patchSubject: (subjectId: string, body: { baseScore?: number; maxScore?: number; status?: string }) =>
-    request<{ ok: boolean }>(`/subjects/${subjectId}`, { method: 'PATCH', body: JSON.stringify(body) }),
 
   // -- Rules --
   getSubjectRules: (subjectId: string) =>
     request<SubjectRulesResponse>(`/rules/${subjectId}`),
   getAcademicRules: () =>
     request<AcademicRulesResponse>('/rules/academic'),
-  createRule: (subjectId: string, body: Partial<AssessmentRule>) =>
-    request<{ id: string }>(`/subjects/${subjectId}/rules`, { method: 'POST', body: JSON.stringify(body) }),
-  patchRule: (ruleId: string, body: Partial<AssessmentRule>) =>
-    request<{ ok: boolean }>(`/rules/${ruleId}`, { method: 'PATCH', body: JSON.stringify(body) }),
-  deleteRule: (ruleId: string) =>
-    request<void>(`/rules/${ruleId}`, { method: 'DELETE' }),
-
-  // -- Calculate --
-  runCalculation: () =>
-    request<StudentScorePreview[]>('/calculate', { method: 'POST' }),
-
-  // -- Export --
-  getExportPreview: () => request<ExportPreview>('/export/preview'),
-  doExport: (format: 'excel' | 'csv') =>
-    request<any>('/export', { method: 'POST', body: JSON.stringify({ format }) }),
 
   // -- Settings --
-  getAISettings: () => request<AISettingsResponse>('/settings/ai'),
-  updateAISettings: (body: { aiProvider: string; aiBaseUrl: string; aiModel: string; aiToken?: string; clearAiToken?: boolean }) =>
-    request<AISettingsResponse>('/settings/ai', { method: 'PATCH', body: JSON.stringify(body) }),
   getBaseScoreSettings: () => request<BaseScoreSettingsResponse>('/settings/base-scores'),
   updateBaseScoreSettings: (body: { items: { subjectId: string; baseScore: number }[] }) =>
     request<BaseScoreSettingsResponse>('/settings/base-scores', { method: 'PATCH', body: JSON.stringify(body) }),
@@ -203,8 +142,6 @@ export const api = {
   },
   getFillPreview: () =>
     request<FillPreviewResponse>('/export/template/fill-preview'),
-  getAIStatus: (taskId: string) =>
-    request<{ status: string; ok?: boolean; placeholders?: string[]; message?: string; error?: string }>(`/export/template/ai-status/${taskId}`),
   fillTemplateCustom: async (fillData: Record<string, string>): Promise<void> => {
     const res = await fetch(`${BASE_URL}/export/template/fill-custom`, {
       method: 'POST',
@@ -229,6 +166,4 @@ export const api = {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },
-  aiRecognizeTemplate: () =>
-    request<{ taskId: string; message: string }>('/export/template/ai-placeholders', { method: 'POST' }),
 };

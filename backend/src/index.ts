@@ -5,15 +5,7 @@ import { getDb } from './db/connection.js';
 import { seed } from './db/seed.js';
 import { getPublicDir } from './utils/paths.js';
 import healthRouter from './routes/health.js';
-import partsRouter from './routes/parts.js';
-import dashboardRouter from './routes/dashboard.js';
-import recordsRouter from './routes/records.js';
-import materialsRouter from './routes/materials.js';
-import tasksRouter from './routes/tasks.js';
-import timelineRouter from './routes/timeline.js';
 import subjectsRouter from './routes/subjects.js';
-import extractRouter from './routes/extract.js';
-import calculateRouter from './routes/calculate.js';
 import academicBaseScoreRouter from './routes/academicBaseScore.js';
 import academicRulesRouter from './routes/academicRules.js';
 import exportRouter from './routes/exportRoutes.js';
@@ -31,19 +23,9 @@ app.post('/api/setup', async (_req, res) => {
   res.json({ status: 'ok', message: 'Database seeded' });
 });
 
-// Existing routes
 app.use('/api', healthRouter);
-app.use('/api', partsRouter);
-app.use('/api', dashboardRouter);
-app.use('/api', recordsRouter);
-app.use('/api', materialsRouter);
-app.use('/api', tasksRouter);
-app.use('/api', timelineRouter);
 
-// New zongce routes
 app.use('/api', subjectsRouter);
-app.use('/api', extractRouter);
-app.use('/api', calculateRouter);
 app.use('/api', academicBaseScoreRouter);
 app.use('/api', academicRulesRouter);
 app.use('/api', exportRouter);

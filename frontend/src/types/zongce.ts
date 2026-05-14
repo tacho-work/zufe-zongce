@@ -61,15 +61,6 @@ export interface RuleCondition {
   value: unknown;
 }
 
-export interface StudentScorePreview {
-  studentId: string;
-  studentName: string;
-  subjectScores: Record<SubjectId, number>;
-  totalScore: number;
-  missingMaterialCount: number;
-  warningCount: number;
-}
-
 // ---- Bonus / proof items (UI-only, not persisted) ----
 
 export interface BonusItem {
@@ -112,18 +103,6 @@ export interface SubjectSummary {
   confirmedRuleCount: number;
   missingMaterialCount: number;
   currentEstimatedScore: number;
-}
-
-export interface ExportPreview {
-  students: StudentScorePreview[];
-  subjectSummaries: Record<SubjectId, { baseScore: number; ruleCount: number }>;
-  totals: {
-    studentCount: number;
-    subjectCount: number;
-    averageScore: number;
-    missingMaterialCount: number;
-    warningCount: number;
-  };
 }
 
 // ---- Academic base score types ----
@@ -263,8 +242,6 @@ export interface TemplatePlaceholdersResponse {
   placeholders: string[];
   hasTemplate: boolean;
   filename: string | null;
-  aiProcessing?: boolean;
-  aiTaskId?: string | null;
 }
 
 export interface FillPreviewResponse {

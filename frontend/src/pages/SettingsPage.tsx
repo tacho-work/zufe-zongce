@@ -6,12 +6,9 @@ import { api } from '../services/api';
 import type { BaseScoreItem } from '../services/api';
 import './SettingsPage.css';
 
-export function SettingsPage() {
-  // AI settings — DeepSeek only
-  const [aiToken, setAiToken] = useState('');
-  const [aiTokenConfigured, setAiTokenConfigured] = useState(false);
-  const [aiSaving, setAiSaving] = useState(false);
+const SETTINGS_BASE_SCORE_SUBJECTS = new Set(['moral', 'aesthetic', 'labor']);
 
+export function SettingsPage() {
   // Base score settings
   const [baseScoreItems, setBaseScoreItems] = useState<BaseScoreItem[]>([]);
   const [savedBaseScores, setSavedBaseScores] = useState<Record<string, number>>({});
@@ -22,9 +19,6 @@ export function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Local-only settings
-  const [exportNamingRule, setExportNamingRule] = useState('综测计算_{date}');
-
   // Rules upload
   const [rulesUploading, setRulesUploading] = useState(false);
   const [rulesError, setRulesError] = useState<string | null>(null);
@@ -33,16 +27,12 @@ export function SettingsPage() {
   const loadSettings = useCallback(() => {
     setLoading(true);
     setError(null);
-    Promise.all([
-      api.getAISettings(),
-      api.getBaseScoreSettings(),
-    ])
-      .then(([ai, base]) => {
-        setAiTokenConfigured(ai.aiTokenConfigured);
-
-        setBaseScoreItems(base.items);
+    api.getBaseScoreSettings()
+      .then((base) => {
+        const editableItems = base.items.filter((item) => SETTINGS_BASE_SCORE_SUBJECTS.has(item.subjectId));
+        setBaseScoreItems(editableItems);
         const saved: Record<string, number> = {};
-        for (const item of base.items) {
+        for (const item of editableItems) {
           saved[item.subjectId] = item.baseScore;
         }
         setSavedBaseScores(saved);
@@ -52,35 +42,6 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => { loadSettings(); }, [loadSettings]);
-
-  const handleAISave = async () => {
-    setAiSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const body: { aiProvider: string; aiBaseUrl: string; aiModel: string; aiToken?: string } = {
-        aiProvider: 'deepseek',
-        aiBaseUrl: 'https://api.deepseek.com/v1',
-        aiModel: 'deepseek-chat',
-      };
-      if (aiToken) body.aiToken = aiToken;
-      await api.updateAISettings(body);
-      setAiToken('');
-      setAiTokenConfigured(true);
-      setSuccess('DeepSeek API Key 已保存');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '保存失败');
-    } finally {
-      setAiSaving(false);
-    }
-  };
-
-  const handleAICancel = () => {
-    setAiToken('');
-  };
-
-  const hasAIChanges = aiToken !== '';
 
   const handleBaseScoreChange = (subjectId: string, value: number) => {
     setBaseScoreItems((prev) =>
@@ -149,29 +110,20 @@ export function SettingsPage() {
     <>
       <PageHeader
         title="设置"
-        description="DeepSeek API 密钥、基础分配置与默认参数。Token 仅在后端保存，不会显示在前端。"
+        description="基础分配置、积分规则与导出默认参数。"
       />
       <div className="page-content">
         <ModulePanel title="服务与参数配置">
           <SettingsPanel
-            aiToken={aiToken}
-            aiTokenConfigured={aiTokenConfigured}
-            onAITokenChange={setAiToken}
             loading={loading}
-            aiSaving={aiSaving}
             error={error}
             success={success}
-            hasAIChanges={hasAIChanges}
-            onAISave={handleAISave}
-            onAICancel={handleAICancel}
             baseScoreItems={baseScoreItems}
             onBaseScoreChange={handleBaseScoreChange}
             baseScoresSaving={baseScoresSaving}
             hasBaseScoreChanges={hasBaseScoreChanges}
             onBaseScoresSave={handleBaseScoresSave}
             onBaseScoresCancel={handleBaseScoresCancel}
-            exportNamingRule={exportNamingRule}
-            onExportNamingRuleChange={setExportNamingRule}
             rulesUploading={rulesUploading}
             rulesError={rulesError}
             rulesSuccess={rulesSuccess}

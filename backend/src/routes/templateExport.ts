@@ -4,14 +4,10 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from '
 import { resolve } from 'path';
 import { extractPlaceholders, fillDocument } from '../services/docxService.js';
 import { getStudentFillData, getFirstStudentFillData } from '../services/templateData.js';
-import { processTemplateWithAI } from '../services/templateAI.js';
 import { queryOne, run } from '../db/connection.js';
 import { getDataDir } from '../utils/paths.js';
 
 const STORAGE_DIR = process.env.TEMPLATE_STORAGE_DIR || resolve(getDataDir(), 'templates');
-
-// Default template bundled with project
-const DEFAULT_TEMPLATE_NAME = '附件2：浙江财经大学本科学生综合测评登记表.docx';
 
 // Stable path for the current template (survives server restart)
 const STABLE_TEMPLATE_PATH = resolve(STORAGE_DIR, '_current_template.docx');
@@ -107,34 +103,20 @@ function clearPersistedTemplate() {
   } catch { /* DB not ready */ }
 }
 
+function getDownloadFilename(): string {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, '');
+  return `综测计算_${timestamp}.docx`;
+}
+
 // ---- In-memory state ----
 
 let currentFilename: string | null = null;
 let currentPlaceholders: string[] = [];
 let uploadedAt: string | null = null;
 let currentFilePath: string | null = null;
-let lastAITaskId: string | null = null;
-
-// ---- AI processing tasks ----
-
-interface AITask {
-  status: 'processing' | 'done' | 'error';
-  placeholders?: string[];
-  message?: string;
-  error?: string;
-}
-
-const aiTasks = new Map<string, AITask>();
-
-// Clean up stale AI tasks every 5 minutes
-setInterval(() => {
-  const cutoff = Date.now() - 10 * 60 * 1000;
-  for (const [id] of aiTasks) {
-    const ts = parseInt(id.split('-').pop() ?? '0', 10);
-    if (ts < cutoff) aiTasks.delete(id);
-  }
-}, 5 * 60 * 1000);
-
 // ---- Module-level init: runs once when createTemplateRouter() is called ----
 // Restores previously uploaded template from disk on restart.
 
@@ -203,21 +185,10 @@ export function createTemplateRouter(): Router {
 
   // GET /placeholders
   router.get('/placeholders', (_req, res) => {
-    let aiProcessing = false;
-    let aiTaskId: string | null = null;
-    if (lastAITaskId) {
-      const task = aiTasks.get(lastAITaskId);
-      if (task?.status === 'processing') {
-        aiProcessing = true;
-        aiTaskId = lastAITaskId;
-      }
-    }
     res.json({
       placeholders: currentPlaceholders,
       hasTemplate: currentFilename !== null,
       filename: currentFilename,
-      aiProcessing,
-      aiTaskId,
     });
   });
 
@@ -256,9 +227,8 @@ export function createTemplateRouter(): Router {
     const template = readFileSync(currentFilePath);
     const filled = fillDocument(template, fillData);
 
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const asciiName = 'zongce.docx';
-    const encodedName = encodeURIComponent(`综测计算_${today}.docx`);
+    const encodedName = encodeURIComponent(getDownloadFilename());
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`);
     res.send(filled);
@@ -304,71 +274,11 @@ export function createTemplateRouter(): Router {
     const template = readFileSync(currentFilePath);
     const filled = fillDocument(template, fillData);
 
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const asciiName = 'zongce.docx';
-    const encodedName = encodeURIComponent(`综测计算_${today}.docx`);
+    const encodedName = encodeURIComponent(getDownloadFilename());
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`);
     res.send(filled);
-  });
-
-  // POST /ai-placeholders — use AI to insert {{placeholders}} into blank template (async)
-  router.post('/ai-placeholders', (req, res) => {
-    if (!currentFilePath || !existsSync(currentFilePath)) {
-      res.status(400).json({ error: '请先上传空白模板' });
-      return;
-    }
-
-    const taskId = `ai-${Date.now()}`;
-    lastAITaskId = taskId;
-    aiTasks.set(taskId, { status: 'processing' });
-
-    const snapshotPath = currentFilePath;
-    const snapshotFilename = currentFilename;
-
-    // Process in background — response returns immediately
-    processTemplateWithAI(snapshotPath)
-      .then((resultPath) => {
-        const buffer = readFileSync(resultPath);
-        writeFileSync(STABLE_TEMPLATE_PATH, buffer);
-
-        const placeholders = extractPlaceholders(buffer);
-        currentFilePath = STABLE_TEMPLATE_PATH;
-        currentPlaceholders = placeholders;
-        currentFilename = 'ai_recognized_' + (snapshotFilename ?? DEFAULT_TEMPLATE_NAME);
-        uploadedAt = new Date().toISOString();
-
-        persistTemplate(currentFilename, placeholders);
-
-        aiTasks.set(taskId, {
-          status: 'done',
-          placeholders,
-          message: `AI 识别完成，共识别 ${placeholders.length} 个占位符`,
-        });
-      })
-      .catch((err: unknown) => {
-        const e = err as Error;
-        console.error('[templateAI] error:', e.message);
-        aiTasks.set(taskId, { status: 'error', error: e.message || 'AI 识别失败' });
-      });
-
-    res.json({ taskId, message: 'AI 识别已开始，请稍候' });
-  });
-
-  // GET /ai-status/:taskId — poll AI processing status
-  router.get('/ai-status/:taskId', (req, res) => {
-    const task = aiTasks.get(req.params.taskId);
-    if (!task) {
-      res.status(404).json({ error: '任务不存在或已过期' });
-      return;
-    }
-    if (task.status === 'processing') {
-      res.json({ status: 'processing' });
-    } else if (task.status === 'done') {
-      res.json({ status: 'done', ok: true, placeholders: task.placeholders, message: task.message });
-    } else {
-      res.json({ status: 'error', error: task.error });
-    }
   });
 
   return router;

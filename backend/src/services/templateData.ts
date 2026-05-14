@@ -69,6 +69,10 @@ function formatScore(scoreType: string, score: number): string {
   return `${sign}${Math.abs(score)}`;
 }
 
+function formatPoint(value: number | string): string {
+  return `${toNumber(value)}分`;
+}
+
 function toNumber(value: number | string): number {
   return typeof value === 'number' ? value : Number(value);
 }
@@ -107,7 +111,7 @@ export function buildFillData(
     for (const [prefix, catRules] of Object.entries(grouped)) {
       if (prefix === `${sid}_other`) continue;
       const details = catRules.map((r) => `${r.name} ${formatScore(r.score_type, r.score)}分`).join('\n');
-      const scores = catRules.map((r) => formatScore(r.score_type, r.score)).join('\n');
+      const scores = catRules.map((r) => `${formatScore(r.score_type, r.score)}分`).join('\n');
       data[`${prefix}_details`] = details;
       data[`${prefix}_scores`] = scores;
     }
@@ -126,23 +130,30 @@ export function buildFillData(
 
     // Subtotal
     if (calc) {
-      data[`${sid}_subtotal`] = String(toNumber(calc.final_score));
+      data[`${sid}_subtotal`] = formatPoint(calc.final_score);
     }
 
     // Base score specifics
     if (sid === 'academic' && calc) {
       const baseScore = toNumber(calc.base_score);
       data.academic_formula_result = `学业成绩基础分: ${baseScore}分`;
-      data.academic_base_scores = String(baseScore);
+      data.academic_base_scores = formatPoint(baseScore);
     }
     if (sid === 'sports' && calc) {
       const baseScore = toNumber(calc.base_score);
       data.sports_score_details = `体育基础成绩: ${baseScore}分`;
-      data.sports_base_scores = String(baseScore);
+      data.sports_base_scores = formatPoint(baseScore);
     }
   }
 
   // total_score left empty for user to fill manually
+  data.other_cadre_details = '';
+  data.other_cadre_scores = '';
+  data.other_volunteer_details = '';
+  data.other_volunteer_scores = '';
+  data.other_other_details = '';
+  data.other_other_scores = '';
+  data.other_subtotal = '';
   data.total_score = '';
 
   return data;

@@ -26,6 +26,7 @@ export async function getDb(): Promise<Database> {
 
 export function saveDb(): void {
   if (db) {
+    fs.mkdirSync(path.dirname(getDbPath()), { recursive: true });
     const data = db.export();
     fs.writeFileSync(getDbPath(), Buffer.from(data));
   }

@@ -7,60 +7,9 @@ import { getDataDir } from '../utils/paths.js';
 
 const router = Router();
 
-function getAISettings() {
-  const aiProvider = (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_provider'")?.value) ?? '';
-  const aiBaseUrl = (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_base_url'")?.value) ?? '';
-  const aiModel = (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_model'")?.value) ?? '';
-  const updatedAtRow = queryOne<{ updated_at: string }>(
-    "SELECT MAX(updated_at) as updated_at FROM app_settings WHERE key IN ('ai_provider', 'ai_base_url', 'ai_model')",
-  );
-  const aiTokenRow = queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_token'");
-  const aiTokenConfigured = !!(process.env.AI_TOKEN || process.env.AI_API_KEY || aiTokenRow?.value);
-
-  return {
-    aiProvider,
-    aiBaseUrl,
-    aiModel,
-    aiTokenConfigured,
-    updatedAt: updatedAtRow?.updated_at ?? null,
-  };
-}
-
-function getAIToken(): string {
-  return process.env.AI_TOKEN || process.env.AI_API_KEY
-    || (queryOne<{ value: string }>("SELECT value FROM app_settings WHERE key = 'ai_token'")?.value)
-    || '';
-}
-
-router.get('/settings/ai', (_req, res) => {
-  res.json(getAISettings());
-});
-
-router.patch('/settings/ai', (req, res) => {
-  const { aiProvider, aiBaseUrl, aiModel, aiToken, clearAiToken } = req.body;
-
-  if (aiProvider !== undefined) {
-    run("UPDATE app_settings SET value = ?, updated_at = datetime('now') WHERE key = 'ai_provider'", [String(aiProvider)]);
-  }
-  if (aiBaseUrl !== undefined) {
-    run("UPDATE app_settings SET value = ?, updated_at = datetime('now') WHERE key = 'ai_base_url'", [String(aiBaseUrl)]);
-  }
-  if (aiModel !== undefined) {
-    run("UPDATE app_settings SET value = ?, updated_at = datetime('now') WHERE key = 'ai_model'", [String(aiModel)]);
-  }
-  if (clearAiToken) {
-    run("UPDATE app_settings SET value = '', updated_at = datetime('now') WHERE key = 'ai_token'");
-  } else if (aiToken !== undefined) {
-    run("UPDATE app_settings SET value = ?, updated_at = datetime('now') WHERE key = 'ai_token'", [String(aiToken)]);
-  }
-
-  res.json(getAISettings());
-});
-
-
 // ---- Base scores ----
 
-const VALID_SUBJECT_IDS = ['moral', 'academic', 'sports', 'aesthetic', 'labor'];
+const SETTINGS_BASE_SCORE_SUBJECT_IDS = ['moral', 'aesthetic', 'labor'];
 const BUSINESS_ORDER = ['moral', 'academic', 'sports', 'aesthetic', 'labor'];
 
 function getBaseScores() {
@@ -72,11 +21,13 @@ function getBaseScores() {
     BUSINESS_ORDER.indexOf(a.subject_id as string) -
     BUSINESS_ORDER.indexOf(b.subject_id as string),
   );
-  const items = configs.map((c) => ({
-    subjectId: c.subject_id as string,
-    subjectName: c.subject_name as string,
-    baseScore: (c.base_score as number) ?? 0,
-  }));
+  const items = configs
+    .filter((c) => SETTINGS_BASE_SCORE_SUBJECT_IDS.includes(c.subject_id as string))
+    .map((c) => ({
+      subjectId: c.subject_id as string,
+      subjectName: c.subject_name as string,
+      baseScore: (c.base_score as number) ?? 0,
+    }));
   const updatedAtRow = queryOne<{ updated_at: string }>(
     'SELECT MAX(updated_at) as updated_at FROM subject_configs',
   );
@@ -99,8 +50,8 @@ router.patch('/settings/base-scores', (req, res) => {
   for (const item of items) {
     const { subjectId, baseScore } = item;
 
-    if (!VALID_SUBJECT_IDS.includes(subjectId)) {
-      res.status(400).json({ error: `Invalid subjectId: ${subjectId}` });
+    if (!SETTINGS_BASE_SCORE_SUBJECT_IDS.includes(subjectId)) {
+      res.status(400).json({ error: `该科目基础分不能在设置页修改: ${subjectId}` });
       return;
     }
 
@@ -187,7 +138,7 @@ router.post('/settings/rules/upload', upload.single('file'), (req, res) => {
       return;
     }
 
-    // Write to output.json
+    fs.mkdirSync(path.dirname(RULES_PATH), { recursive: true });
     fs.writeFileSync(RULES_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
 
     // Build summary

@@ -34,6 +34,16 @@ export function FillDataEditor({ open, onClose }: Props) {
   const [exporting, setExporting] = useState(false);
   const originalRef = useRef<Record<string, string>>({});
 
+  const groupPlaceholders = useCallback((labels: Record<string, { section: string; column: string }>): Record<string, string[]> => {
+    const groups: Record<string, string[]> = {};
+    for (const ph of Object.keys(labels)) {
+      const sk = getSubjectKey(ph);
+      if (!groups[sk]) groups[sk] = [];
+      groups[sk].push(ph);
+    }
+    return groups;
+  }, []);
+
   const loadPreview = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -53,21 +63,13 @@ export function FillDataEditor({ open, onClose }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [groupPlaceholders]);
 
   useEffect(() => {
-    loadPreview();
-  }, [loadPreview]);
-
-  const groupPlaceholders = useCallback((labels: Record<string, { section: string; column: string }>): Record<string, string[]> => {
-    const groups: Record<string, string[]> = {};
-    for (const ph of Object.keys(labels)) {
-      const sk = getSubjectKey(ph);
-      if (!groups[sk]) groups[sk] = [];
-      groups[sk].push(ph);
+    if (open) {
+      loadPreview();
     }
-    return groups;
-  }, []);
+  }, [open, loadPreview]);
 
   const groups = useMemo(() => {
     if (!preview) return {};

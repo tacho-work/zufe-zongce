@@ -9,45 +9,36 @@ const SUBJECTS = [
   { id: 'labor', name: '劳育' },
 ];
 
+const DEFAULT_BATCH_ID = 'default-single-student-batch';
+const DEFAULT_STUDENT_ROW_ID = 'default-single-student-row';
+const DEFAULT_STUDENT_ID = 'single-student';
+
+function ensureDefaultStudent(): void {
+  const existing = queryOne<{ count: number }>('SELECT COUNT(*) as count FROM student_rows');
+  if (existing && existing.count > 0) return;
+
+  run(
+    `INSERT OR IGNORE INTO student_import_batches (id, file_name, row_count)
+     VALUES (?, ?, ?)`,
+    [DEFAULT_BATCH_ID, '系统默认学生', 1],
+  );
+  run(
+    `INSERT OR IGNORE INTO student_rows (id, batch_id, student_id, student_name, raw_data_json)
+     VALUES (?, ?, ?, ?, ?)`,
+    [
+      DEFAULT_STUDENT_ROW_ID,
+      DEFAULT_BATCH_ID,
+      DEFAULT_STUDENT_ID,
+      '默认学生',
+      JSON.stringify({ hidden: true }),
+    ],
+  );
+}
+
 export async function seed(): Promise<void> {
   await getDb();
   createSchema();
 
-  // Seed app_settings defaults (always ensure they exist)
-  for (const { key, value } of [
-    { key: 'ai_provider', value: '' },
-    { key: 'ai_base_url', value: '' },
-    { key: 'ai_model', value: '' },
-    { key: 'ai_token', value: '' },
-  ]) {
-    run('INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
-  }
-
-  const existing = queryOne<{ count: number }>('SELECT COUNT(*) as count FROM parts');
-  if (existing && existing.count > 0) {
-    // Already seeded old tables. Check if new tables need seeding.
-    const sc = queryOne<{ count: number }>('SELECT COUNT(*) as count FROM subject_configs');
-    if (sc && sc.count > 0) return;
-  }
-
-  // Seed old parts table
-  const parts = [
-    { label: '德育', type: 'moral', order: 1 },
-    { label: '智育', type: 'academic', order: 2 },
-    { label: '体育', type: 'sports', order: 3 },
-    { label: '美育', type: 'aesthetic', order: 4 },
-    { label: '劳育', type: 'labor', order: 5 },
-    { label: '设置', type: 'settings', order: 6 },
-  ];
-
-  for (const p of parts) {
-    run(
-      'INSERT INTO parts (label, type, "order") VALUES (?, ?, ?)',
-      [p.label, p.type, p.order],
-    );
-  }
-
-  // Seed subject_configs with base scores
   const DEFAULT_BASE_SCORES: Record<string, number> = {
     moral: 70,
     academic: 60,
@@ -59,11 +50,12 @@ export async function seed(): Promise<void> {
   for (const s of SUBJECTS) {
     const baseScore = DEFAULT_BASE_SCORES[s.id] ?? 60;
     run(
-      `INSERT OR REPLACE INTO subject_configs (subject_id, subject_name, base_score, status)
+      `INSERT OR IGNORE INTO subject_configs (subject_id, subject_name, base_score, status)
        VALUES (?, ?, ?, 'draft')`,
       [s.id, s.name, baseScore],
     );
   }
 
+  ensureDefaultStudent();
   saveDb();
 }

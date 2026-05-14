@@ -85,6 +85,9 @@ function assertRulesFile(value: unknown): asserts value is AcademicRulesFile {
 }
 
 function readRulesFile(): AcademicRulesFile {
+  if (!fs.existsSync(RULES_PATH)) {
+    return { schemaVersion: 'empty', subjects: {} };
+  }
   const raw = fs.readFileSync(RULES_PATH, 'utf8');
   const parsed = JSON.parse(raw) as unknown;
   assertRulesFile(parsed);

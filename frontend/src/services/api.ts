@@ -6,6 +6,23 @@ import type {
 
 const BASE_URL = '/api';
 
+export function getDownloadFilename(disposition: string, fallback: string): string {
+  const encodedMatch = disposition.match(/(?:^|;\s*)filename\*=UTF-8''([^;]+)/i);
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1]);
+    } catch {
+      return encodedMatch[1];
+    }
+  }
+
+  const quotedMatch = disposition.match(/(?:^|;\s*)filename="([^"]+)"/i);
+  if (quotedMatch?.[1]) return quotedMatch[1];
+
+  const plainMatch = disposition.match(/(?:^|;\s*)filename=([^;]+)/i);
+  return plainMatch?.[1]?.trim() || fallback;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -129,8 +146,7 @@ export const api = {
     }
     const blob = await res.blob();
     const disposition = res.headers.get('Content-Disposition') ?? '';
-    const nameMatch = disposition.match(/filename="?(.+?)"?$/);
-    const filename = nameMatch?.[1] ?? `filled-${studentId}.docx`;
+    const filename = getDownloadFilename(disposition, '综测计算.docx');
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -155,8 +171,7 @@ export const api = {
     }
     const blob = await res.blob();
     const disposition = res.headers.get('Content-Disposition') ?? '';
-    const nameMatch = disposition.match(/filename="?(.+?)"?$/);
-    const filename = nameMatch?.[1] ?? '综测计算.docx';
+    const filename = getDownloadFilename(disposition, '综测计算.docx');
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
